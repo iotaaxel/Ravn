@@ -1,14 +1,3 @@
-// Our simulation example
-// Multiple threads to process data, sensor input as Euler angles (Vec<u32>) as x,y,z 
-// Note: x,y,z (8 bits each), final 8 bits unused
-// Our three threads: 
-//  1. get data from sensor to pool it continously (empty Vec for Euler angles) 
-//  2. Basic sensor fusion (floating point stored as u32 , make sure to convert back to float), stored as a fixed point (keep sig figs)
-//  3. Get the resulting data out (display it)
-// [TODO] Future work: Implement queueing 
-
-// Flow of information: 1 (sender), 2 (sender + receiver), 3 (receiver only)
-// Emphasis on proper threading (syncing and data passing between threads)
 extern crate crossbeam_channel;
 use crossbeam_channel::{bounded, unbounded};
 
@@ -18,10 +7,10 @@ fn main() {
     let (s2, r2) = (s1.clone(), r1.clone());
     let (s3, r3) = (s2.clone(), r2.clone());
 
-    // 1. Simulation: Get data from the sensor continuously
+    // Get data from the sensor continuously
     let mut data: Vec <u32> = Vec::new();
 
-    while true { //Note: don't do this. 
+    loop { //Note: don't do this. 
         s1.send(&data).expect("Unable to get process data!");
     }
 
