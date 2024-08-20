@@ -21,4 +21,3 @@ The three main threads have the following roles:
 ## Priorities and Optimizations
 * We prioritize ensuring proper threading (syncing and data passing between threads).
 * Optimizations would be great considering potentially large amounts of data.
-* 
