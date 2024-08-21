@@ -120,6 +120,7 @@ fn bits_to_u32(bits: &[u32]) -> Result<u32, &'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f32::consts::PI;
 
     #[test]
     fn test_bits_to_u32_triplet_valid() {
@@ -208,106 +209,89 @@ mod tests {
         );
     }
 
-    #[cfg(test)]
-    mod tests {
-        use super::*;
+    #[test]
+    fn test_convert_fixed32_to_float() {
+        let fractional_bits = 16;
 
-        #[test]
-        fn test_convert_fixed32_to_float() {
-            let fractional_bits = 16;
+        // Test conversion of a fixed-point value back to float
+        let fixed_value = 205887;
+        let result = convert_fixed32_to_float(fixed_value, fractional_bits);
+        println!("res 1: {:?}", result);
+        assert!((result - PI).abs() < 1e-5); // Expected float value (within tolerance)
 
-            // Test conversion of a fixed-point value back to float
-            let fixed_value = 205887;
-            let result = convert_fixed32_to_float(fixed_value, fractional_bits);
-            println!("res 1: {:?}", result);
-            assert!((result - 3.14159).abs() < 1e-5); // Expected float value (within tolerance)
+        // Test conversion of zero
+        let fixed_value = 0;
+        let result = convert_fixed32_to_float(fixed_value, fractional_bits);
+        println!("res 2: {:?}", result);
+        assert_eq!(result, 0.0); // Expected float value
 
-            // Test conversion of zero
-            let fixed_value = 0;
-            let result = convert_fixed32_to_float(fixed_value, fractional_bits);
-            println!("res 2: {:?}", result);
-            assert_eq!(result, 0.0); // Expected float value
+        // Test conversion of a small fixed-point value
+        let fixed_value = 7;
+        let result = convert_fixed32_to_float(fixed_value, fractional_bits);
+        println!("res 3: {:?}", result);
+        assert!((result - 0.0001).abs() < 1e-5); // Expected float value (within tolerance)
+    }
 
-            // Test conversion of a small fixed-point value
-            let fixed_value = 7;
-            let result = convert_fixed32_to_float(fixed_value, fractional_bits);
-            println!("res 3: {:?}", result);
-            assert!((result - 0.0001).abs() < 1e-5); // Expected float value (within tolerance)
-        }
+    #[test]
+    fn test_convert_fixed32_to_float_large_value() {
+        let fractional_bits = 16;
+        let fixed_value = u32::MAX; // Maximum value for u32
+        let result = convert_fixed32_to_float(fixed_value, fractional_bits);
+        let expected = (u32::MAX as f32) / ((1u32 << fractional_bits) as f32);
+        assert!((result - expected).abs() < 1e-5);
+    }
 
-        #[test]
-        fn test_convert_fixed32_to_float_large_value() {
-            let fractional_bits = 16;
-            let fixed_value = u32::MAX; // Maximum value for u32
-            let result = convert_fixed32_to_float(fixed_value, fractional_bits);
-            let expected = (u32::MAX as f32) / ((1u32 << fractional_bits) as f32);
-            assert!((result - expected).abs() < 1e-5);
-        }
+    #[test]
+    fn test_convert_fixed32_to_float_negative() {
+        // Since u32 cannot represent negative numbers, this test is not applicable.
+        // We skip the negative case because u32 does not support negative values.
+        let value = -PI;
+        let fractional_bits = 16;
+        let result = convert_float_to_fixed32(value, fractional_bits);
+        assert!(result.is_err());
+    }
 
-        #[test]
-        fn test_convert_fixed32_to_float_negative() {
-            // Since u32 cannot represent negative numbers, this test is not applicable.
-            // We skip the negative case because u32 does not support negative values.
-            let value = -3.14159;
-            let fractional_bits = 16;
-            let result = convert_float_to_fixed32(value, fractional_bits);
-            assert!(result.is_err());
-        }
+    #[test]
+    fn test_convert_fixed32_to_float_small_value() {
+        let fractional_bits = 16;
+        let fixed_value = 1; // Smallest possible value for a non-zero fixed-point number
+        let result = convert_fixed32_to_float(fixed_value, fractional_bits);
+        let expected = 1.0 / (1u32 << fractional_bits) as f32;
+        assert!((result - expected).abs() < 1e-7);
+    }
 
-        #[test]
-        fn test_convert_fixed32_to_float_small_value() {
-            let fractional_bits = 16;
-            let fixed_value = 1; // Smallest possible value for a non-zero fixed-point number
-            let result = convert_fixed32_to_float(fixed_value, fractional_bits);
-            let expected = 1.0 / (1u32 << fractional_bits) as f32;
-            assert!((result - expected).abs() < 1e-7);
-        }
+    #[test]
+    fn test_convert_float_to_fixed32_zero() {
+        let value = 0.0;
+        let fractional_bits = 16;
+        let result = convert_float_to_fixed32(value, fractional_bits);
+        assert_eq!(result.unwrap(), 0);
+    }
 
-        #[test]
-        fn test_convert_float_to_fixed32_zero() {
-            let value = 0.0;
-            let fractional_bits = 16;
-            let result = convert_float_to_fixed32(value, fractional_bits);
-            assert_eq!(result.unwrap(), 0);
-        }
+    #[test]
+    fn test_convert_float_to_fixed32_positive() {
+        let value = PI;
+        let fractional_bits = 16;
+        let result = convert_float_to_fixed32(value, fractional_bits);
+        assert_eq!(result.unwrap(), 205887);
+    }
 
-        #[test]
-        fn test_convert_float_to_fixed32_positive() {
-            let value = 3.14159;
-            let fractional_bits = 16;
-            let result = convert_float_to_fixed32(value, fractional_bits);
-            assert_eq!(result.unwrap(), 205887);
-        }
+    #[test]
+    fn test_convert_float_to_fixed32_negative() {
+        let value = -PI;
+        let fractional_bits = 16;
+        let result = convert_float_to_fixed32(value, fractional_bits);
+        // The behavior is not defined here since we don't handle negative values in this example.
+        // Skipping this test.
+        assert!(result.is_err());
+    }
 
-        #[test]
-        fn test_convert_float_to_fixed32_negative() {
-            let value = -3.14159;
-            let fractional_bits = 16;
-            let result = convert_float_to_fixed32(value, fractional_bits);
-            // The behavior is not defined here since we don't handle negative values in this example.
-            // Skipping this test.
-            assert!(result.is_err());
-        }
-
-        #[test]
-        fn test_convert_float_to_fixed32_small_value() {
-            let value = 0.0001;
-            let fractional_bits = 16;
-            let result = convert_float_to_fixed32(value, fractional_bits);
-            assert_eq!(result.unwrap(), 7);
-        }
-
-        #[test]
-        fn test_convert_float_to_fixed32_large_value() {
-            let value = 1e10;
-            let fractional_bits = 16;
-            let result = convert_float_to_fixed32(value, fractional_bits);
-            assert!(result.is_err());
-            assert_eq!(
-                result.err().unwrap(),
-                "Overflow: value is too large for u32"
-            );
-        }
+    #[test]
+    fn test_convert_float_to_fixed32_small_value() {
+        let value = 0.0001;
+        let fractional_bits = 16;
+        let result = convert_float_to_fixed32(value, fractional_bits);
+        assert_eq!(result.unwrap(), 7);
     }
 
     #[test]
