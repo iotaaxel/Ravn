@@ -14,7 +14,7 @@ The three main threads have the following roles:
 
 ## Data Sharing between threads
 * Flow of information:
-  * Thread 1 (sender)
+  * Thread 1 (sender only)
   * Thread 2 (sender + receiver)
   * Thread 3 (receiver only)
 
