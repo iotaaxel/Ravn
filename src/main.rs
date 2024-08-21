@@ -1,4 +1,5 @@
 use crossbeam_channel::{unbounded, Receiver, Sender};
+use nalgebra::Rotation3;
 use std::thread;
 
 fn main() {
@@ -51,9 +52,9 @@ fn main() {
         let euler_angles: Vec<u32> = r3.recv().expect("Unable to receive data!");
 
         // Access the Euler angles (three u32 values used to represent the floating point values)
-        let x: u32 = euler_angles[0];
-        let y: u32 = euler_angles[1];
-        let z: u32 = euler_angles[2];
+        let x: u32 = euler_angles[0]; // Assuming this represents the roll
+        let y: u32 = euler_angles[1]; // Assuming this represents the pitch
+        let z: u32 = euler_angles[2]; // Assuming this represents the yaw
 
         // Convert the Euler angles to floating point values
         let fractional_bits = 16;
@@ -62,7 +63,10 @@ fn main() {
         let result_y: f32 = convert_fixed32_to_float(fixed_values_triplet.1, fractional_bits);
         let result_z: f32 = convert_fixed32_to_float(fixed_values_triplet.2, fractional_bits);
 
-        println!("Simulation concluded with the observed Euler angles of x = {:#?}, y = {:#?}, and z = {:#?}.!", result_x, result_y, result_z);
+        // Creates a new rotation from the given Euler angles (in order roll, pitch, yaw)
+        let rotation = Rotation3::from_euler_angles(result_x, result_y, result_z);
+        let (roll, pitch, yaw) = rotation.euler_angles();
+        println!("Simulation concluded with the observed Euler angles of {:#?} (roll), {:#?} (pitch), and {:#?} (yaw).", roll, pitch, yaw);
     });
 }
 
