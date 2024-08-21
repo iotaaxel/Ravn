@@ -1,5 +1,5 @@
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use std::thread;
-use crossbeam_channel::{Sender, Receiver, unbounded};
 
 fn main() {
     // Create senders and receivers for necessary channels
@@ -8,14 +8,14 @@ fn main() {
     let (_s3, r3): (Sender<Vec<u32>>, Receiver<Vec<u32>>) = (s2.clone(), r2.clone());
 
     // Get data from the sensor continuously
-    // Note: This is a vector of bits that represent the Euler angles 
-    let data: Vec <u32> = Vec::new(); 
+    // Note: This is a vector of bits that represent the Euler angles
+    let data: Vec<u32> = Vec::new();
 
     // Commented out since it will run indefinitely
     // and will make code below unreachable
     // Send data to the second receiver
-    // loop { //Note: don't do this. 
-        s1.send(data).expect("Unable to get process data!");
+    // loop { //Note: don't do this.
+    s1.send(data).expect("Unable to get process data!");
     // }
 
     // Spawn a thread that receives a message and then sends one.
@@ -23,23 +23,27 @@ fn main() {
         let euler_angles: Vec<u32> = r2.recv().expect("Unable to receive data!");
 
         // Access the Euler angles (convert bits to three floating points stored as u32)
-        let (x,y,z): (u32, u32, u32) = bits_to_u32_triplet(&euler_angles).expect("Unable to get correct conversion from Euler angles.");    
-        
+        let (x, y, z): (u32, u32, u32) = bits_to_u32_triplet(&euler_angles)
+            .expect("Unable to get correct conversion from Euler angles.");
+
         // Convert the Euler angles to floating point values
         let fractional_bits = 16;
-        let fixed_values_triplet: (u32, u32, u32) = (x,y,z);
+        let fixed_values_triplet: (u32, u32, u32) = (x, y, z);
         let result_x: f32 = convert_fixed32_to_float(fixed_values_triplet.0, fractional_bits);
         let result_y: f32 = convert_fixed32_to_float(fixed_values_triplet.1, fractional_bits);
         let result_z: f32 = convert_fixed32_to_float(fixed_values_triplet.2, fractional_bits);
 
         // Convert the floating point values to fixed-point representation
-        let fixed_x: u32 = convert_float_to_fixed32(result_x, fractional_bits).expect("Unable to get correct conversion from Euler angles.");
-        let fixed_y: u32 = convert_float_to_fixed32(result_y, fractional_bits).expect("Unable to get correct conversion from Euler angles.");
-        let fixed_z: u32 = convert_float_to_fixed32(result_z, fractional_bits).expect("Unable to get correct conversion from Euler angles.");
+        let fixed_x: u32 = convert_float_to_fixed32(result_x, fractional_bits)
+            .expect("Unable to get correct conversion from Euler angles.");
+        let fixed_y: u32 = convert_float_to_fixed32(result_y, fractional_bits)
+            .expect("Unable to get correct conversion from Euler angles.");
+        let fixed_z: u32 = convert_float_to_fixed32(result_z, fractional_bits)
+            .expect("Unable to get correct conversion from Euler angles.");
 
         // Send the result to the third receiver
-        s2.send(vec![fixed_x, fixed_y, fixed_z]).expect("Unable to get correct conversion from Euler angles.");
-
+        s2.send(vec![fixed_x, fixed_y, fixed_z])
+            .expect("Unable to get correct conversion from Euler angles.");
     });
 
     // Spawn a thread that receives and displays a message.
@@ -53,21 +57,19 @@ fn main() {
 
         // Convert the Euler angles to floating point values
         let fractional_bits = 16;
-        let fixed_values_triplet: (u32, u32, u32) = (x,y,z);
+        let fixed_values_triplet: (u32, u32, u32) = (x, y, z);
         let result_x: f32 = convert_fixed32_to_float(fixed_values_triplet.0, fractional_bits);
         let result_y: f32 = convert_fixed32_to_float(fixed_values_triplet.1, fractional_bits);
         let result_z: f32 = convert_fixed32_to_float(fixed_values_triplet.2, fractional_bits);
 
         println!("Simulation concluded with the observed Euler angles of x = {:#?}, y = {:#?}, and z = {:#?}.!", result_x, result_y, result_z);
     });
-
 }
-
 
 fn convert_float_to_fixed32(value: f32, fractional_bits: u32) -> Result<u32, &'static str> {
     // Calculate the fixed-point representation
     let scaled_value = f32::from_bits(value.to_bits() * (1u32 << fractional_bits));
-    
+
     // Check if the scaled value fits within the u32 range
     // Note: Depending on the application, you might want to set to u32::MIN or u32::MAX instead of returning an error
     if scaled_value < 0.0 {
@@ -75,11 +77,10 @@ fn convert_float_to_fixed32(value: f32, fractional_bits: u32) -> Result<u32, &'s
     } else if scaled_value > u32::MAX as f32 {
         return Err("Overflow: value is too large for u32");
     }
-    
+
     // Convert to u32 and return
     Ok(scaled_value.round().to_bits())
 }
-
 
 fn convert_fixed32_to_float(fixed_value: u32, fractional_bits: u32) -> f32 {
     // Convert the unsigned integer (fixed-point) back to a floating point value
@@ -116,18 +117,17 @@ fn bits_to_u32(bits: &[u32]) -> Result<u32, &'static str> {
     Ok(x)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_bits_to_u32_triplet_valid() {
         let bits: Vec<u32> = vec![
             1, 0, 1, 1, 0, 0, 1, 0, // x: 178
             0, 0, 0, 0, 1, 0, 1, 1, // y: 11
             1, 1, 1, 1, 0, 0, 0, 1, // z: 241
-            1, 1, 1, 0, 1, 0, 0, 0  // Last 8 bits unused
+            1, 1, 1, 0, 1, 0, 0, 0, // Last 8 bits unused
         ];
 
         let result = bits_to_u32_triplet(&bits);
@@ -138,12 +138,15 @@ mod tests {
     fn test_bits_to_u32_triplet_insufficient_bits() {
         let bits: Vec<u32> = vec![
             1, 0, 1, 1, 0, 0, 1, 0, // x: 178
-            0, 0, 0, 0, 1, 0, 1, 1  // y: 11, z is missing
+            0, 0, 0, 0, 1, 0, 1, 1, // y: 11, z is missing
         ];
 
         let result = bits_to_u32_triplet(&bits);
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Not enough bits to create u32 values for x, y, and z.");
+        assert_eq!(
+            result.err().unwrap(),
+            "Not enough bits to create u32 values for x, y, and z."
+        );
     }
 
     #[test]
@@ -152,12 +155,15 @@ mod tests {
             1, 0, 1, 1, 0, 0, 1, 2, // x: Invalid bit value (2)
             0, 0, 0, 0, 1, 0, 1, 1, // y
             1, 1, 1, 1, 0, 0, 0, 1, // z
-            1, 1, 1, 0, 1, 0, 0, 0  // Last 8 bits unused
+            1, 1, 1, 0, 1, 0, 0, 0, // Last 8 bits unused
         ];
 
         let result = bits_to_u32_triplet(&bits);
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Invalid bit value; bits must be 0 or 1.");
+        assert_eq!(
+            result.err().unwrap(),
+            "Invalid bit value; bits must be 0 or 1."
+        );
     }
 
     #[test]
@@ -184,7 +190,10 @@ mod tests {
         let bits: Vec<u32> = vec![1, 0, 1, 0, 1];
         let result: Result<u32, &str> = bits_to_u32(&bits);
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Not enough bits to create a u32 from the first 8 bits.");
+        assert_eq!(
+            result.err().unwrap(),
+            "Not enough bits to create a u32 from the first 8 bits."
+        );
     }
 
     #[test]
@@ -193,50 +202,59 @@ mod tests {
         let bits: Vec<u32> = vec![1, 0, 2, 1, 0, 0, 1, 0];
         let result: Result<u32, &str> = bits_to_u32(&bits);
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Invalid bit value; bits must be 0 or 1.");
+        assert_eq!(
+            result.err().unwrap(),
+            "Invalid bit value; bits must be 0 or 1."
+        );
     }
 
     #[test]
     fn test_convert_float_to_fixed32() {
         let fractional_bits = 16;
-        
+
         // Test conversion of a positive float
         let result = convert_float_to_fixed32(3.14159, fractional_bits);
         assert_eq!(result.unwrap(), 205887); // Expected fixed-point value
-        
+
         // Test conversion of zero
         let result = convert_float_to_fixed32(0.0, fractional_bits);
         assert_eq!(result.unwrap(), 0); // Expected fixed-point value
-        
+
         // Test conversion of a small positive float
         let result = convert_float_to_fixed32(0.0001, fractional_bits);
         assert_eq!(result.unwrap(), 6); // Expected fixed-point value
-        
+
         // Test conversion of a value that would cause overflow
         let result = convert_float_to_fixed32(1e10, fractional_bits);
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Overflow: value is too large for u32");
-        
+        assert_eq!(
+            result.err().unwrap(),
+            "Overflow: value is too large for u32"
+        );
+
         // Test conversion of a negative float (underflow)
         let result = convert_float_to_fixed32(-3.14159, fractional_bits);
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Underflow: value is too small for u32");
+        assert_eq!(
+            result.err().unwrap(),
+            "Underflow: value is too small for u32"
+        );
     }
 
     #[test]
     fn test_convert_fixed32_to_float() {
         let fractional_bits = 16;
-        
+
         // Test conversion of a fixed-point value back to float
         let fixed_value = 205887;
         let result = convert_fixed32_to_float(fixed_value, fractional_bits);
         assert!((result - 3.14159).abs() < 1e-5); // Expected float value (within tolerance)
-        
+
         // Test conversion of zero
         let fixed_value = 0;
         let result = convert_fixed32_to_float(fixed_value, fractional_bits);
         assert_eq!(result, 0.0); // Expected float value
-        
+
         // Test conversion of a small fixed-point value
         let fixed_value = 6;
         let result = convert_fixed32_to_float(fixed_value, fractional_bits);
