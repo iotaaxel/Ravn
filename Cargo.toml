@@ -1,5 +1,5 @@
 [package]
-name = "ravn_interview"
+name = "ravn"
 version = "0.1.0"
 edition = "2021"
 
