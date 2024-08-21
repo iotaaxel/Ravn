@@ -27,9 +27,9 @@ fn main() {
 
         let res: u32 = 0; // TODO: Use x, y, z to get the result of the conversion
 
-        let val = s2.send(vec![res, res, res]).expect("Unable to get correct conversion from Euler angles.");
+        s2.send(vec![res, res, res]).expect("Unable to get correct conversion from Euler angles.");
 
-        println!("Simulation concluded with value {:#?}!", val);
+        println!("Simulation concluded with value {:#?}!", ());
     });
 
     // Spawn a thread that receives and displays a message.
