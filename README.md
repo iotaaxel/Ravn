@@ -21,3 +21,10 @@ The three main threads have the following roles:
 ## Priorities and Optimizations
 * We prioritize ensuring proper threading (syncing and data passing between threads).
 * Optimizations would be great considering potentially large amounts of data.
+
+## Future Work
+* Implement queueing
+* Use Command-line arguments to take in user input (will probably be converted to `Vec<Vec<u32>>`)
+* Support alternative input formats (JSON, comma-separated, etc.)
+* Support alternative output formats (JSON, CSV, etc.)
+* Support input and output compression types (Snappy, etc.)
