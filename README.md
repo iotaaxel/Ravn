@@ -1,3 +1,8 @@
+# Ravn
+<!--- [![crates.io]()](https://crates.io/crates/) --->
+[![license](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](#license)
+[![github actions](https://github.com/iotaaxel/Ravn/actions/workflows/ci.yml/badge.svg)](https://github.com/iotaaxel/Ravn/actions)
+
 ## Overview
 We are simulating using multiple threads to process data from a sensor, perform basic sensor fusion, and display the information. 
 
