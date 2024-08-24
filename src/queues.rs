@@ -22,11 +22,17 @@ pub mod queue {
         type Item = Vec<u32>;
 
         fn dequeue(&mut self) -> Option<Self::Item> {
-            self.items.pop()
+            //FIFO
+            let index = 0;
+            if self.is_empty() || !(0..self.items.len()).contains(&index) {
+                None
+            } else {
+                Some(self.items.remove(index))
+            }
         }
         fn enqueue(&mut self, item: Self::Item) {
-            self.items.insert(0, item)
-        } // FIFO
+            self.items.push(item);
+        }
         fn get(&mut self, index: usize) -> Option<Self::Item> {
             self.items.get(index).cloned()
         }
@@ -85,7 +91,7 @@ mod tests {
         assert!(queue.is_empty());
 
         queue.enqueue(vec![1, 2, 3]);
-        assert!(queue.is_empty());
+        assert!(!queue.is_empty());
 
         queue.dequeue();
         assert!(queue.is_empty());
