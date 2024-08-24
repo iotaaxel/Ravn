@@ -1,5 +1,7 @@
 pub mod conversion {
 
+    use nalgebra::Rotation3;
+
     pub fn bits_to_u32(bits: &[u32]) -> Result<u32, &'static str> {
         if bits.len() < 8 {
             return Err("Not enough bits to create a u32 from the first 8 bits.");
@@ -49,6 +51,48 @@ pub mod conversion {
 
         // Convert to u32 and return
         Ok(scaled_value.round() as u32)
+    }
+
+    pub fn fixed_points_triplet_from_bits_euler_angles(euler_angles: Vec<u32>) -> Vec<u32> {
+        // Access the Euler angles (convert bits to three floating points stored as u32)
+        let (x, y, z): (u32, u32, u32) = bits_to_u32_triplet(&euler_angles)
+            .expect("Unable to get correct conversion from Euler angles.");
+
+        // Convert the Euler angles to floating point values
+        let fractional_bits = 16;
+        let fixed_values_triplet: (u32, u32, u32) = (x, y, z);
+        let result_x: f32 = convert_fixed32_to_float(fixed_values_triplet.0, fractional_bits);
+        let result_y: f32 = convert_fixed32_to_float(fixed_values_triplet.1, fractional_bits);
+        let result_z: f32 = convert_fixed32_to_float(fixed_values_triplet.2, fractional_bits);
+
+        // Convert the floating point values to fixed-point representation
+        let fixed_x: u32 = convert_float_to_fixed32(result_x, fractional_bits)
+            .expect("Unable to get correct conversion from Euler angles.");
+        let fixed_y: u32 = convert_float_to_fixed32(result_y, fractional_bits)
+            .expect("Unable to get correct conversion from Euler angles.");
+        let fixed_z: u32 = convert_float_to_fixed32(result_z, fractional_bits)
+            .expect("Unable to get correct conversion from Euler angles.");
+
+        vec![fixed_x, fixed_y, fixed_z]
+    }
+
+    pub fn reconstructed_euler_angles_from_fixed_points(euler_angles: Vec<u32>) -> (f32, f32, f32) {
+        // Access the Euler angles (three u32 values used to represent the floating point values)
+        let x: u32 = euler_angles[0]; // Assuming this represents the roll
+        let y: u32 = euler_angles[1]; // Assuming this represents the pitch
+        let z: u32 = euler_angles[2]; // Assuming this represents the yaw
+
+        // Convert the Euler angles to floating point values
+        let fractional_bits = 16;
+        let fixed_values_triplet: (u32, u32, u32) = (x, y, z);
+        let result_x: f32 = convert_fixed32_to_float(fixed_values_triplet.0, fractional_bits);
+        let result_y: f32 = convert_fixed32_to_float(fixed_values_triplet.1, fractional_bits);
+        let result_z: f32 = convert_fixed32_to_float(fixed_values_triplet.2, fractional_bits);
+
+        // Creates a new rotation from the given Euler angles (in order roll, pitch, yaw)
+        let rotation = Rotation3::from_euler_angles(result_x, result_y, result_z);
+        let (roll, pitch, yaw) = rotation.euler_angles();
+        (roll, pitch, yaw)
     }
 }
 
@@ -239,5 +283,33 @@ mod tests {
             result.err().unwrap(),
             "Overflow: value is too large for u32"
         );
+    }
+
+    #[test]
+    fn test_fixed_points_triplet_from_bits_euler_angles() {
+        let euler_angles: Vec<u32> = vec![
+            1, 0, 1, 1, 0, 0, 1, 0, // x: 178
+            0, 0, 0, 0, 1, 0, 1, 1, // y: 11
+            1, 1, 1, 1, 0, 0, 0, 1, // z: 241
+            1, 1, 1, 0, 1, 0, 0, 0, // Last 8 bits unused
+        ];
+
+        let result = fixed_points_triplet_from_bits_euler_angles(euler_angles);
+        assert_eq!(result, vec![178, 11, 241]);
+    }
+
+    #[test]
+    fn test_reconstructed_euler_angles_from_fixed_points() {
+        let euler_angles: Vec<u32> = vec![
+            1, 0, 1, 1, 0, 0, 1, 0, // x: 178
+            0, 0, 0, 0, 1, 0, 1, 1, // y: 11
+            1, 1, 1, 1, 0, 0, 0, 1, // z: 241
+            1, 1, 1, 0, 1, 0, 0, 0, // Last 8 bits unused
+        ];
+
+        let result = reconstructed_euler_angles_from_fixed_points(euler_angles);
+        assert!((result.0 - 0.00001).abs() <= 1e-1); // Expected roll value (within tolerance)
+        assert!((result.1 - 0.00001).abs() <= 1e-1); // Expected pitch value (within tolerance)
+        assert!((result.2 - 0.00001).abs() < 1e-1); // Expected yaw value (within tolerance)
     }
 }
